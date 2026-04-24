@@ -1,6 +1,7 @@
 import './globals.css';
 import { Instrument_Serif, Geist, Geist_Mono } from 'next/font/google';
 import type { Metadata, Viewport } from 'next';
+import BottomNav from '@/components/bottom-nav';
 
 const instrument = Instrument_Serif({
   subsets: ['latin'],
@@ -41,7 +42,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr" className={`${instrument.variable} ${geist.variable} ${geistMono.variable}`}>
-      <body className="font-sans">{children}</body>
+      <body className="font-sans">
+        {children}
+        <BottomNav />
+      </body>
     </html>
   );
 }

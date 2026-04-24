@@ -49,19 +49,27 @@ Compose + Traefik labels gèrent Host matching, SSL, port forwarding automatique
 
 - [x] **Phase 1** — Design system + HTML mockups déployés
 - [x] **Phase 2** — Auth Google end-to-end + shell Home
-- [ ] **Phase 3** — 5 écrans full wired (Home stats, Session, Progression, Exos)
-- [ ] **Phase 4** — Panel Training dans Grafana Blueprint Health
-- [ ] **Phase 5** — OAuth Apple + ajustements PWA iOS
+- [x] **Phase 3** — Session logging end-to-end (stepper kg/reps/RPE, optimistic UI), /exercises liste groupée par muscle_group, /progress (volume 90j + PRs top 5), bottom nav sticky
+- [ ] **Phase 4** — CRUD exercices (renommer/ajouter/supprimer/favoris), édition séance passée
+- [ ] **Phase 5** — Panel Training dans Grafana Blueprint Health + OAuth Apple
 
 ## Structure
 
 ```
 app/
-├── layout.tsx              # Fonts + metadata PWA
+├── layout.tsx              # Fonts + metadata PWA + BottomNav
 ├── globals.css             # Design tokens (CSS vars)
-├── page.tsx                # Home (auth-gated)
+├── page.tsx                # Home (volume semaine, dernières séances, CTA)
 ├── login/page.tsx          # OAuth Google
-└── auth/callback/route.ts  # Handler post-OAuth
+├── auth/callback/route.ts  # Handler post-OAuth (origin from x-forwarded-host)
+├── exercises/page.tsx      # Liste des exos groupée par muscle_group
+├── progress/page.tsx       # Volume 90j + PRs (charge max par exo) + séances
+└── session/
+    ├── actions.ts          # Server actions: startWorkout, logSet, deleteSet, endWorkout
+    ├── new/page.tsx        # Form démarrage séance → redirect /session/[id]
+    └── [id]/
+        ├── page.tsx        # Loader server: workout + exercises + sets
+        └── session-editor.tsx  # Client: stepper kg/reps/RPE + optimistic UI
 
 lib/supabase/
 ├── server.ts               # createServerClient (cookies, schema gym)
@@ -69,7 +77,18 @@ lib/supabase/
 └── middleware.ts           # Session refresh + redirect guard
 
 middleware.ts               # Next.js middleware entrypoint
-components/                 # UI components
+components/
+├── bottom-nav.tsx          # 4 tabs: Home / Session / Progression / Exos
+└── sign-out-button.tsx
+```
+
+## Important : exposer le schéma `gym` via PostgREST
+
+Par défaut Supabase n'expose que `public`. Une fois par projet :
+
+```sql
+alter role authenticator set pgrst.db_schemas to 'public, graphql_public, gym';
+notify pgrst, 'reload config';
 ```
 
 ## Sécurité
