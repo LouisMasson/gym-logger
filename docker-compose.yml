@@ -1,0 +1,26 @@
+services:
+  gym-logger:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    image: gym-logger:latest
+    container_name: gym-logger
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.gym-logger.rule=Host(`gym.patronusguardian.org`)"
+      - "traefik.http.routers.gym-logger.entrypoints=websecure"
+      - "traefik.http.routers.gym-logger.tls.certresolver=letsencrypt"
+      - "traefik.http.services.gym-logger.loadbalancer.server.port=3000"
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
