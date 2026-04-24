@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import WorkoutRow from '@/components/workout-row';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,21 +104,7 @@ export default async function ProgressPage() {
         ) : (
           <div className="card p-0 overflow-hidden">
             {workoutsRes.data!.slice(0, 10).map((w, idx, arr) => (
-              <Link
-                key={w.id}
-                href={w.ended_at ? `/workout/${w.id}` : `/session/${w.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-surface-2 transition-colors"
-                style={{ borderBottom: idx === arr.length - 1 ? 'none' : '1px solid var(--border)' }}
-              >
-                <div>
-                  <div className="text-[14px] font-medium">{w.name ?? 'Séance'}</div>
-                  <div className="text-[11px] text-muted tnum">
-                    {new Date(w.started_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
-                    {!w.ended_at && <span className="ml-1" style={{ color: 'var(--accent)' }}>· en cours</span>}
-                  </div>
-                </div>
-                <span className="text-muted text-[18px]">→</span>
-              </Link>
+              <WorkoutRow key={w.id} w={w} isLast={idx === arr.length - 1} size="sm" />
             ))}
           </div>
         )}

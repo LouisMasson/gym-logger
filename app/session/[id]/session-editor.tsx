@@ -2,7 +2,9 @@
 
 import { useMemo, useState, useTransition, useEffect } from 'react';
 import { logSet, deleteSet, endWorkout } from '../actions';
+import { deleteWorkout } from '@/app/workout/actions';
 import Link from 'next/link';
+import { Trash2 } from 'lucide-react';
 
 type Workout = { id: string; name: string | null; started_at: string; ended_at: string | null };
 type Exercise = { id: string; name: string; muscle_group: string | null };
@@ -120,6 +122,18 @@ export default function SessionEditor({
     }
   }
 
+  async function handleDeleteWorkout() {
+    const label = workout.name ?? 'cette séance';
+    if (!confirm(`Supprimer "${label}" ? Toutes les séries seront perdues. Cette action est irréversible.`)) return;
+    setEnding(true);
+    try {
+      await deleteWorkout(workout.id, '/');
+    } catch (e) {
+      setEnding(false);
+      alert('Erreur : ' + (e as Error).message);
+    }
+  }
+
   return (
     <main className="min-h-dvh px-5 pt-14 pb-28">
       <div className="flex items-center justify-between">
@@ -217,6 +231,15 @@ export default function SessionEditor({
         className="w-full mt-6 py-3 rounded-xl border border-border text-muted hover:text-text"
       >
         {ending ? 'Clôture…' : 'Terminer la séance'}
+      </button>
+
+      <button
+        onClick={handleDeleteWorkout}
+        disabled={ending}
+        className="w-full mt-3 py-2.5 rounded-xl text-muted hover:text-danger text-[13px] flex items-center justify-center gap-2"
+      >
+        <Trash2 size={14} strokeWidth={1.8} />
+        Supprimer cette séance
       </button>
     </main>
   );

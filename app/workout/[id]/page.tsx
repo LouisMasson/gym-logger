@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
+import DeleteWorkoutButton from './delete-workout-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -69,6 +70,12 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
         </div>
       </div>
 
+      {Array.from(byExo.entries()).map(([exoId, setsList]) => setsList).length === 0 && (
+        <div className="card mt-6">
+          <p className="text-muted text-[14px]">Aucune série loggée dans cette séance.</p>
+        </div>
+      )}
+
       {Array.from(byExo.entries()).map(([exoId, sets]) => (
         <section key={exoId} className="mt-6">
           <p className="label-xs mb-2">{exoMap.get(exoId) ?? '—'}</p>
@@ -89,6 +96,8 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
           </div>
         </section>
       ))}
+
+      <DeleteWorkoutButton workoutId={w.id} label={w.name ?? 'cette séance'} />
     </main>
   );
 }
