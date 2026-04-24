@@ -103,9 +103,10 @@ export default async function ProgressPage() {
         ) : (
           <div className="card p-0 overflow-hidden">
             {workoutsRes.data!.slice(0, 10).map((w, idx, arr) => (
-              <div
+              <Link
                 key={w.id}
-                className="flex items-center justify-between px-4 py-3"
+                href={w.ended_at ? `/workout/${w.id}` : `/session/${w.id}`}
+                className="flex items-center justify-between px-4 py-3 hover:bg-surface-2 transition-colors"
                 style={{ borderBottom: idx === arr.length - 1 ? 'none' : '1px solid var(--border)' }}
               >
                 <div>
@@ -115,7 +116,8 @@ export default async function ProgressPage() {
                     {!w.ended_at && <span className="ml-1" style={{ color: 'var(--accent)' }}>· en cours</span>}
                   </div>
                 </div>
-              </div>
+                <span className="text-muted text-[18px]">→</span>
+              </Link>
             ))}
           </div>
         )}

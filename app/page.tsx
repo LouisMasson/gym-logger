@@ -70,9 +70,10 @@ export default async function HomePage() {
       ) : (
         <div className="card p-0 overflow-hidden">
           {lastWorkoutsRes.data!.map((w, idx) => (
-            <div
+            <Link
               key={w.id}
-              className="flex items-center justify-between px-4 py-3"
+              href={w.ended_at ? `/workout/${w.id}` : `/session/${w.id}`}
+              className="flex items-center justify-between px-4 py-3 hover:bg-surface-2 transition-colors"
               style={{ borderBottom: idx === lastWorkoutsRes.data!.length - 1 ? 'none' : '1px solid var(--border)' }}
             >
               <div>
@@ -80,11 +81,11 @@ export default async function HomePage() {
                 <div className="text-[12px] text-muted tnum">
                   {new Date(w.started_at).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', weekday: 'short' })}
                   {' · '}
-                  {w.ended_at ? 'terminée' : 'en cours'}
+                  {w.ended_at ? 'terminée' : <span style={{ color: 'var(--accent)' }}>en cours</span>}
                 </div>
               </div>
               <span className="text-muted text-[18px]">→</span>
-            </div>
+            </Link>
           ))}
         </div>
       )}

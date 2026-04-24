@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import ExerciseRow from './exercise-row';
+import NewExerciseForm from './new-exercise-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,43 +26,32 @@ export default async function ExercisesPage() {
     .order('is_favorite', { ascending: false })
     .order('name', { ascending: true });
 
-  const grouped = (exercises ?? []).reduce<Record<string, typeof exercises>>((acc, ex) => {
+  const list = exercises ?? [];
+  const grouped: Record<string, typeof list> = {};
+  for (const ex of list) {
     const g = ex.muscle_group ?? 'other';
-    (acc[g] ??= []).push(ex as never);
-    return acc;
-  }, {} as never);
+    (grouped[g] ??= []).push(ex);
+  }
 
   return (
     <main className="min-h-dvh px-5 pt-14 pb-28">
-      <div className="flex items-center justify-between">
-        <Link href="/" className="text-[15px]">←</Link>
-      </div>
+      <Link href="/" className="text-[15px]">←</Link>
       <h1 className="font-display italic text-[32px] tracking-tight mt-1">Exercices</h1>
       <p className="text-muted text-[13px] mt-1 tnum">
-        {exercises?.length ?? 0} actifs · tap pour détails (bientôt)
+        {list.length} actifs · tap le nom pour renommer, ★ pour favori
       </p>
 
+      <NewExerciseForm />
+
       {Object.entries(GROUP_LABELS).map(([key, label]) => {
-        const list = grouped[key] ?? [];
-        if (list.length === 0) return null;
+        const items = grouped[key] ?? [];
+        if (items.length === 0) return null;
         return (
           <section key={key} className="mt-6">
-            <p className="label-xs mb-2">{label}</p>
+            <p className="label-xs mb-2">{label} <span className="tnum">({items.length})</span></p>
             <div className="card p-0 overflow-hidden">
-              {list.map((ex, idx) => (
-                <div
-                  key={ex.id}
-                  className="flex items-center justify-between px-4 py-3"
-                  style={{ borderBottom: idx === list.length - 1 ? 'none' : '1px solid var(--border)' }}
-                >
-                  <div>
-                    <div className="text-[15px] font-medium">{ex.name}</div>
-                    {ex.is_favorite && (
-                      <div className="text-[12px] mt-0.5" style={{ color: 'var(--accent)' }}>★ favori</div>
-                    )}
-                  </div>
-                  <span className="text-muted text-[14px]">⋯</span>
-                </div>
+              {items.map((ex, idx) => (
+                <ExerciseRow key={ex.id} exercise={ex} isLast={idx === items.length - 1} />
               ))}
             </div>
           </section>
