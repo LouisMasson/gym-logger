@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth';
+import { getCachedExercises } from '@/lib/cache';
 import { redirect, notFound } from 'next/navigation';
 import SessionEditor from './session-editor';
 
@@ -7,12 +8,12 @@ export const dynamic = 'force-dynamic';
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireUser();
+  const user = await requireUser();
   const supabase = await createClient();
 
-  const [workoutRes, exercisesRes, setsRes] = await Promise.all([
+  const [workoutRes, exercises, setsRes] = await Promise.all([
     supabase.from('workouts').select('id, name, started_at, ended_at').eq('id', id).maybeSingle(),
-    supabase.from('exercises').select('id, name, muscle_group').eq('is_archived', false).order('name'),
+    getCachedExercises(user.id),
     supabase
       .from('sets')
       .select('id, exercise_id, set_number, reps, weight_kg, rpe, logged_at')
@@ -26,7 +27,7 @@ export default async function SessionPage({ params }: { params: Promise<{ id: st
   return (
     <SessionEditor
       workout={workoutRes.data}
-      exercises={exercisesRes.data ?? []}
+      exercises={exercises.map((e) => ({ id: e.id, name: e.name, muscle_group: e.muscle_group }))}
       initialSets={setsRes.data ?? []}
     />
   );

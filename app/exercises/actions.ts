@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth';
-import { revalidatePath } from 'next/cache';
+import { exerciseListTag } from '@/lib/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 type MuscleGroup = 'push' | 'pull' | 'legs' | 'core' | 'other';
 
@@ -10,6 +11,11 @@ async function supabaseWithUser() {
   const user = await requireUser();
   const supabase = await createClient();
   return { supabase, userId: user.id };
+}
+
+function bust(userId: string) {
+  revalidateTag(exerciseListTag(userId));
+  revalidatePath('/exercises');
 }
 
 export async function createExercise(formData: FormData) {
@@ -25,37 +31,37 @@ export async function createExercise(formData: FormData) {
   });
   if (error) throw new Error(error.message);
 
-  revalidatePath('/exercises');
+  bust(userId);
 }
 
 export async function renameExercise(id: string, newName: string) {
   const name = newName.trim();
   if (!name) throw new Error('Le nom est requis');
 
-  const { supabase } = await supabaseWithUser();
+  const { supabase, userId } = await supabaseWithUser();
   const { error } = await supabase.from('exercises').update({ name }).eq('id', id);
   if (error) throw new Error(error.message);
 
-  revalidatePath('/exercises');
+  bust(userId);
 }
 
 export async function toggleFavorite(id: string, next: boolean) {
-  const { supabase } = await supabaseWithUser();
+  const { supabase, userId } = await supabaseWithUser();
   const { error } = await supabase.from('exercises').update({ is_favorite: next }).eq('id', id);
   if (error) throw new Error(error.message);
-  revalidatePath('/exercises');
+  bust(userId);
 }
 
 export async function changeMuscleGroup(id: string, group: MuscleGroup) {
-  const { supabase } = await supabaseWithUser();
+  const { supabase, userId } = await supabaseWithUser();
   const { error } = await supabase.from('exercises').update({ muscle_group: group }).eq('id', id);
   if (error) throw new Error(error.message);
-  revalidatePath('/exercises');
+  bust(userId);
 }
 
 export async function archiveExercise(id: string) {
-  const { supabase } = await supabaseWithUser();
+  const { supabase, userId } = await supabaseWithUser();
   const { error } = await supabase.from('exercises').update({ is_archived: true }).eq('id', id);
   if (error) throw new Error(error.message);
-  revalidatePath('/exercises');
+  bust(userId);
 }
