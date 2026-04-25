@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition, useEffect } from 'react';
 import { logSet, deleteSet, endWorkout } from '../actions';
 import { deleteWorkout } from '@/app/workout/actions';
+import { isRedirect } from '@/lib/errors';
 import Link from 'next/link';
 import { Trash2 } from '@/components/icons';
 
@@ -117,6 +118,7 @@ export default function SessionEditor({
     try {
       await endWorkout(workout.id);
     } catch (e) {
+      if (isRedirect(e)) throw e;
       setEnding(false);
       alert('Erreur : ' + (e as Error).message);
     }
@@ -129,6 +131,7 @@ export default function SessionEditor({
     try {
       await deleteWorkout(workout.id, '/');
     } catch (e) {
+      if (isRedirect(e)) throw e;
       setEnding(false);
       alert('Erreur : ' + (e as Error).message);
     }

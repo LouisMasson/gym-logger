@@ -3,6 +3,7 @@
 import { useTransition } from 'react';
 import { Trash2 } from '@/components/icons';
 import { deleteWorkout } from '../actions';
+import { isRedirect } from '@/lib/errors';
 
 export default function DeleteWorkoutButton({ workoutId, label }: { workoutId: string; label: string }) {
   const [pending, startTransition] = useTransition();
@@ -13,6 +14,7 @@ export default function DeleteWorkoutButton({ workoutId, label }: { workoutId: s
       try {
         await deleteWorkout(workoutId, '/');
       } catch (e) {
+        if (isRedirect(e)) throw e;
         alert('Erreur : ' + (e as Error).message);
       }
     });
