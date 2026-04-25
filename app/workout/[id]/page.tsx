@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import DeleteWorkoutButton from './delete-workout-button';
@@ -11,9 +12,8 @@ function fmt(n: number) {
 
 export default async function WorkoutPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
 
   const [workoutRes, setsRes, exosRes] = await Promise.all([
     supabase.from('workouts').select('id, name, started_at, ended_at').eq('id', id).maybeSingle(),

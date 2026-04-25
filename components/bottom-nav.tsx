@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Dumbbell, TrendingUp, ListChecks } from 'lucide-react';
+import { Home, Dumbbell, TrendingUp, ListChecks } from '@/components/icons';
 
 const items = [
   { href: '/', label: 'Home', icon: Home, match: (p: string) => p === '/' },

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import SessionEditor from './session-editor';
 
@@ -6,9 +7,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function SessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
 
   const [workoutRes, exercisesRes, setsRes] = await Promise.all([
     supabase.from('workouts').select('id, name, started_at, ended_at').eq('id', id).maybeSingle(),

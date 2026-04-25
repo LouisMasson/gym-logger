@@ -1,14 +1,14 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
 export async function startWorkout(formData: FormData) {
   const name = ((formData.get('name') as string) || '').trim() || null;
+  const user = await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
 
   const { data, error } = await supabase
     .from('workouts')
@@ -31,9 +31,8 @@ export async function logSet(params: {
   weightKg: number;
   rpe: number | null;
 }) {
+  const user = await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('unauthenticated');
 
   const { error } = await supabase.from('sets').insert({
     user_id: user.id,
@@ -50,9 +49,8 @@ export async function logSet(params: {
 }
 
 export async function deleteSet(setId: string, workoutId: string) {
+  await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('unauthenticated');
 
   const { error } = await supabase.from('sets').delete().eq('id', setId);
   if (error) throw new Error(error.message);
@@ -61,9 +59,8 @@ export async function deleteSet(setId: string, workoutId: string) {
 }
 
 export async function endWorkout(workoutId: string) {
+  await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('unauthenticated');
 
   const { error } = await supabase
     .from('workouts')

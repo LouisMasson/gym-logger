@@ -1,7 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@/components/icons';
 import { deleteWorkout } from '../actions';
 
 export default function DeleteWorkoutButton({ workoutId, label }: { workoutId: string; label: string }) {

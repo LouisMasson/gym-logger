@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@/components/icons';
 import { deleteWorkout } from '@/app/workout/actions';
 
 export type WorkoutRowData = {

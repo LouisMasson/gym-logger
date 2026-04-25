@@ -1,14 +1,14 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { requireUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 
 type MuscleGroup = 'push' | 'pull' | 'legs' | 'core' | 'other';
 
 async function supabaseWithUser() {
+  const user = await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('unauthenticated');
   return { supabase, userId: user.id };
 }
 

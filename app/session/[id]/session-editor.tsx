@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition, useEffect } from 'react';
 import { logSet, deleteSet, endWorkout } from '../actions';
 import { deleteWorkout } from '@/app/workout/actions';
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { Trash2 } from '@/components/icons';
 
 type Workout = { id: string; name: string | null; started_at: string; ended_at: string | null };
 type Exercise = { id: string; name: string; muscle_group: string | null };

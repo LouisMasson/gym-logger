@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireUser } from '@/lib/auth';
 import Link from 'next/link';
 import ExerciseRow from './exercise-row';
 import NewExerciseForm from './new-exercise-form';
@@ -15,10 +15,11 @@ const GROUP_LABELS: Record<string, string> = {
 };
 
 export default async function ExercisesPage() {
+  await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
 
+  // No unstable_cache here: this page mutates the list (CRUD) so we want
+  // immediate consistency. The /session/[id] route is the cached path.
   const { data: exercises } = await supabase
     .from('exercises')
     .select('id, name, muscle_group, is_favorite')

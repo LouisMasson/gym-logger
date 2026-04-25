@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
+import { requireUser } from '@/lib/auth';
 import WorkoutRow from '@/components/workout-row';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,9 +10,8 @@ function fmt(n: number) {
 }
 
 export default async function ProgressPage() {
+  await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
 
   const threeMonthsAgo = new Date();
   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);

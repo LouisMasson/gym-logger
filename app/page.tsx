@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { requireUser } from '@/lib/auth';
 import Link from 'next/link';
 import SignOutButton from '@/components/sign-out-button';
 import WorkoutRow from '@/components/workout-row';
@@ -11,15 +11,9 @@ function fmtNumber(n: number) {
 }
 
 export default async function HomePage() {
+  const user = await requireUser();
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/login');
-
-  const displayName =
-    user.user_metadata?.full_name ||
-    user.user_metadata?.name ||
-    user.email?.split('@')[0] ||
-    'champion';
+  const displayName = user.name;
 
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
