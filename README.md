@@ -2,10 +2,11 @@
 
 Logge ta perf. Rien d'autre.
 
-Progressive Web App pour logger les performances en salle. Next.js 15 + Supabase + Dokploy.
+Progressive Web App pour logger les performances en salle, avec pipeline data jusqu'à Grafana. Next.js 15 + Supabase + Dokploy + dbt.
 
 🌐 **Prod** : https://gym.patronusguardian.org
 🎨 **Preview mockups** : https://gym-preview.patronusguardian.org
+📊 **Dashboard Grafana** : Blueprint Health → row 💪 Strength Training
 📐 **Design system** : Athletic Minimalism — Instrument Serif + Geist + accent lime `#D4FF3D`
 
 ## Stack
@@ -29,6 +30,26 @@ Progressive Web App pour logger les performances en salle. Next.js 15 + Supabase
 
 RLS activé : chaque user ne voit que ses propres données via `auth.uid() = user_id`.
 
+## Pipeline data → Grafana
+
+```
+gym schema (Supabase OLTP)
+    │
+    ├─► clean.gym_sessions   (1 row par workout terminé, volume_kg, duration, RPE)
+    ├─► agg.gym_weekly       (1 row par lundi, sessions_count, volume_kg_total)
+    └─► agg.gym_prs          (1 row par exo, charge max + reps + date)
+                │
+                └─► Grafana Blueprint Health (d/blueprint-health-main)
+                        └─► row 💪 Strength Training
+                                ├─ Stats: volume sem., séances, séries, RPE moyen
+                                ├─ Bar chart accent lime: volume hebdomadaire
+                                ├─ Timeseries: sessions + durée totale
+                                └─ Table: top 10 records personnels
+```
+
+Refresh quotidien via le cron dbt existant (`agg.gym_*` materialized as tables).
+Models dans le repo [`data-platform/dbt/models/clean/gym_sessions.sql`, `models/agg/gym_weekly.sql`, `models/agg/gym_prs.sql`].
+
 ## Dev local
 
 ```bash
@@ -47,11 +68,15 @@ Compose + Traefik labels gèrent Host matching, SSL, port forwarding automatique
 
 ## Roadmap
 
-- [x] **Phase 1** — Design system + HTML mockups déployés
-- [x] **Phase 2** — Auth Google end-to-end + shell Home
-- [x] **Phase 3** — Session logging end-to-end (stepper kg/reps/RPE, optimistic UI), /exercises liste groupée par muscle_group, /progress (volume 90j + PRs top 5), bottom nav sticky
-- [ ] **Phase 4** — CRUD exercices (renommer/ajouter/supprimer/favoris), édition séance passée
-- [ ] **Phase 5** — Panel Training dans Grafana Blueprint Health + OAuth Apple
+- [x] **Phase 1** — Design system + HTML mockups déployés (gym-preview.patronusguardian.org)
+- [x] **Phase 2** — Auth Google end-to-end + shell Home + fix `x-forwarded-host` derrière Traefik
+- [x] **Phase 3** — Session logging end-to-end (stepper kg/reps/RPE, optimistic UI), /exercises liste groupée par muscle_group, /progress (volume 90j + PRs top 5), bottom nav sticky 4 onglets
+- [x] **Phase 4** — CRUD exercices (rename inline, favoris, archive, muscle_group pills), `/workout/[id]` view détail séance terminée, suppression séance partout (Home, Progress, détail, in-progress), loading.tsx sur toutes les routes
+- [x] **Perf round 1+2** — auth dedup via header injection, drop lucide-react, cache exos per-user (revalidateTag), edge runtime middleware, Docker HEALTHCHECK warmup. -29% TTFB Home, -36% mémoire (130MB → 83MB). [Issue #1 closed](https://github.com/LouisMasson/gym-logger/issues/1).
+- [x] **Phase Data** — Pipeline gym → dbt → Grafana Blueprint Health. Row 💪 Strength Training avec volume hebdo, séances, top PRs. [Issue #6 closed](https://github.com/LouisMasson/gym-logger/issues/6).
+- [ ] **Phase 5 — Friction zéro** ([milestone](https://github.com/LouisMasson/gym-logger/milestone/1)) : quick-add série + dupliquer séance + édition séance passée
+- [ ] **Phase 6 — Motivation visuelle** ([milestone](https://github.com/LouisMasson/gym-logger/milestone/2)) : courbes volume + heatmap fréquence + détection PR + célébration
+- [ ] **Phase 7 — Polish produit** ([milestone](https://github.com/LouisMasson/gym-logger/milestone/3)) : vraie icône PWA + splash iOS + OAuth Apple
 
 ## Structure
 
