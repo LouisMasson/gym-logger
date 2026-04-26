@@ -19,14 +19,19 @@ function publicOrigin(request: Request): string {
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/';
+  const nextParam = searchParams.get('next') ?? '/';
+  // Reject any next that could escape the origin (//evil.com, /\evil.com, full URLs).
+  const safeNext =
+    nextParam.startsWith('/') && !nextParam.startsWith('//') && !nextParam.includes('\\')
+      ? nextParam
+      : '/';
   const origin = publicOrigin(request);
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${origin}${safeNext}`);
     }
   }
 

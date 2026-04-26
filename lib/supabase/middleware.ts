@@ -7,6 +7,14 @@ export async function updateSession(request: NextRequest) {
   // Clone inbound headers — we will inject user identity for downstream RSC.
   const requestHeaders = new Headers(request.headers);
 
+  // Strip any inbound x-gl-* headers — they are server-injected only.
+  // Without this, an attacker hitting a path that bypasses the matcher
+  // (e.g. /session/foo.png because the matcher excludes image extensions)
+  // could forge x-gl-user-id and have requireUser() trust it.
+  requestHeaders.delete('x-gl-user-id');
+  requestHeaders.delete('x-gl-user-name');
+  requestHeaders.delete('x-gl-user-email');
+
   let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
 
   const supabase = createServerClient(
