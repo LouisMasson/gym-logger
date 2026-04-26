@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState, useTransition, useEffect } from 'react';
+import { useCallback, useMemo, useRef, useState, useTransition, useEffect } from 'react';
 import { logSet, deleteSet, endWorkout } from '../actions';
 import { deleteWorkout } from '@/app/workout/actions';
 import { isRedirect } from '@/lib/errors';
 import Link from 'next/link';
 import { Trash2 } from '@/components/icons';
+import RestTimer, { type RestTimerHandle } from '@/components/rest-timer';
 
 type Workout = { id: string; name: string | null; started_at: string; ended_at: string | null };
 type Exercise = { id: string; name: string; muscle_group: string | null };
@@ -78,6 +79,10 @@ export default function SessionEditor({
   const [rpe, setRpe] = useState(initialSuggestion.rpe);
   const [pending, startTransition] = useTransition();
   const [ending, setEnding] = useState(false);
+  const restTimerRef = useRef<RestTimerHandle | null>(null);
+  const onTimerReady = useCallback((h: RestTimerHandle) => {
+    restTimerRef.current = h;
+  }, []);
 
   // When the user picks a different exercise, snap the stepper to its suggested values.
   function changeExercise(newExoId: string) {
@@ -125,6 +130,8 @@ export default function SessionEditor({
       logged_at: new Date().toISOString(),
     };
     setSets((prev) => [...prev, optimistic]);
+    // Start the rest countdown immediately (don't wait for the network roundtrip).
+    restTimerRef.current?.start();
     startTransition(async () => {
       try {
         await logSet({
@@ -137,6 +144,7 @@ export default function SessionEditor({
         });
       } catch (e) {
         setSets((prev) => prev.filter((s) => s.id !== optimistic.id));
+        restTimerRef.current?.stop();
         alert('Erreur : ' + (e as Error).message);
       }
     });
@@ -255,6 +263,8 @@ export default function SessionEditor({
       <button onClick={handleLog} disabled={pending || !selectedExoId} className="btn-primary mt-6">
         {pending ? 'Enregistrement…' : 'Valider la série'}
       </button>
+
+      <RestTimer onReady={onTimerReady} />
 
       {setsForExo.length > 0 && (
         <>

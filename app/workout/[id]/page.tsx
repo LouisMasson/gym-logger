@@ -4,6 +4,7 @@ import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import DeleteWorkoutButton from './delete-workout-button';
 import DuplicateWorkoutButton from './duplicate-workout-button';
+import { ReopenWorkoutButton, DeleteSetInlineButton } from './edit-workout-bar';
 
 export const dynamic = 'force-dynamic';
 
@@ -84,7 +85,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
             {sets.map((s, idx) => (
               <div
                 key={s.id}
-                className="grid grid-cols-[24px_1fr] items-center px-4 py-2.5 text-[14px]"
+                className="grid grid-cols-[24px_1fr_28px] items-center px-4 py-2.5 text-[14px]"
                 style={{ borderBottom: idx === sets.length - 1 ? 'none' : '1px solid var(--border)' }}
               >
                 <span className="font-mono font-semibold text-muted tnum">{s.set_number}</span>
@@ -92,6 +93,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
                   {Number(s.weight_kg ?? 0)} kg <span className="text-muted">×</span> {s.reps}
                   {s.rpe != null && <span className="text-muted"> · RPE {s.rpe}</span>}
                 </span>
+                <DeleteSetInlineButton setId={s.id} workoutId={w.id} />
               </div>
             ))}
           </div>
@@ -99,6 +101,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
       ))}
 
       <DuplicateWorkoutButton workoutId={w.id} label={w.name ?? 'cette séance'} />
+      <ReopenWorkoutButton workoutId={w.id} />
       <DeleteWorkoutButton workoutId={w.id} label={w.name ?? 'cette séance'} />
     </main>
   );
