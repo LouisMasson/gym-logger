@@ -74,9 +74,10 @@ Compose + Traefik labels gèrent Host matching, SSL, port forwarding automatique
 - [x] **Phase 4** — CRUD exercices (rename inline, favoris, archive, muscle_group pills), `/workout/[id]` view détail séance terminée, suppression séance partout (Home, Progress, détail, in-progress), loading.tsx sur toutes les routes
 - [x] **Perf round 1+2** — auth dedup via header injection, drop lucide-react, cache exos per-user (revalidateTag), edge runtime middleware, Docker HEALTHCHECK warmup. -29% TTFB Home, -36% mémoire (130MB → 83MB). [Issue #1 closed](https://github.com/LouisMasson/gym-logger/issues/1).
 - [x] **Phase Data** — Pipeline gym → dbt → Grafana Blueprint Health. Row 💪 Strength Training avec volume hebdo, séances, top PRs. [Issue #6 closed](https://github.com/LouisMasson/gym-logger/issues/6).
-- [ ] **Phase 5 — Friction zéro** ([milestone](https://github.com/LouisMasson/gym-logger/milestone/1)) : quick-add série + dupliquer séance + édition séance passée
-- [ ] **Phase 6 — Motivation visuelle** ([milestone](https://github.com/LouisMasson/gym-logger/milestone/2)) : courbes volume + heatmap fréquence + détection PR + célébration
-- [ ] **Phase 7 — Polish produit** ([milestone](https://github.com/LouisMasson/gym-logger/milestone/3)) : vraie icône PWA + splash iOS + OAuth Apple
+- [x] **Phase 5 — Friction zéro** : quick-add série + dupliquer séance + édition séance passée + rest timer auto. [Milestone closed](https://github.com/LouisMasson/gym-logger/milestone/1).
+- [x] **Phase 7 (partiel) — Icône PWA & splash iOS** : icône lime serif italique "G" avec barre accent, favicon multi-size, 5 splash screens iOS (iPhone 6→14 Pro Max). [Issue #8 closed](https://github.com/LouisMasson/gym-logger/issues/8).
+- [ ] **Phase 6 — Motivation visuelle** (différée) : courbes volume + heatmap + détection PR. À reprendre quand 4-6 semaines de data accumulées.
+- [ ] **OAuth Apple** (différé) : nécessite Apple Developer Account.
 
 ## Structure
 

@@ -11,9 +11,9 @@ export async function middleware(request: NextRequest) {
 }
 
 // Match only routes that need auth handling. Excludes static assets and PWA files
-// so the middleware doesn't run for icon/manifest/favicon requests.
+// so the middleware doesn't run for icon/manifest/favicon/splash requests.
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|apple-icon|icon-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|apple-icon|apple-splash|splash/|icon-.*|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };
