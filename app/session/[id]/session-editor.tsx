@@ -60,15 +60,24 @@ export default function SessionEditor({
 
   // Pre-fill stepper from last logged set on this exo (across ALL workouts).
   // If user already logged a set on this exo IN this workout, that takes priority.
+  // Weight is snapped to the nearest even integer because the stepper uses +/-2 kg
+  // increments — keeps the value on the natural step grid.
+  function snapWeight(w: number) {
+    return Math.max(0, Math.round(w / 2) * 2);
+  }
   function suggestedFor(exoId: string) {
     const inSession = sets.filter((s) => s.exercise_id === exoId);
     const last = inSession[inSession.length - 1];
     if (last) {
-      return { reps: last.reps, weight: Number(last.weight_kg ?? 0), rpe: last.rpe ?? 7 };
+      return {
+        reps: last.reps,
+        weight: snapWeight(Number(last.weight_kg ?? 0)),
+        rpe: last.rpe ?? 7,
+      };
     }
     const fromHistory = lastSetsByExercise[exoId];
     if (fromHistory) {
-      return { reps: fromHistory.reps, weight: fromHistory.weight, rpe: fromHistory.rpe ?? 7 };
+      return { reps: fromHistory.reps, weight: snapWeight(fromHistory.weight), rpe: fromHistory.rpe ?? 7 };
     }
     return { reps: 8, weight: 60, rpe: 7 };
   }
@@ -171,9 +180,14 @@ export default function SessionEditor({
   }
 
   async function handleEnd() {
-    if (sets.length === 0) {
-      if (!confirm('Aucune série loggée. Quitter sans enregistrer ?')) return;
-    }
+    const setCount = sets.length;
+    const totalKg = Math.round(totalVolume);
+    const message =
+      setCount === 0
+        ? 'Aucune série loggée. Quitter sans enregistrer ?'
+        : `Terminer cette séance ?\n\n${setCount} série${setCount > 1 ? 's' : ''} · ${new Intl.NumberFormat('fr-FR').format(totalKg)} kg de volume\n\nElle sera sauvegardée et tu la retrouveras dans Progression.`;
+    if (!confirm(message)) return;
+
     setEnding(true);
     try {
       await endWorkout(workout.id);
@@ -248,7 +262,7 @@ export default function SessionEditor({
         </button>
       )}
 
-      <StepperRow label="kg" value={weight} onDec={() => setWeight((v) => Math.max(0, +(v - 2.5).toFixed(2)))} onInc={() => setWeight((v) => +(v + 2.5).toFixed(2))} />
+      <StepperRow label="kg" value={weight} onDec={() => setWeight((v) => Math.max(0, v - 2))} onInc={() => setWeight((v) => v + 2)} />
       <StepperRow label="rep" value={reps} onDec={() => setReps((v) => Math.max(0, v - 1))} onInc={() => setReps((v) => v + 1)} />
 
       <div className="mt-5">
