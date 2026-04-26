@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { reopenWorkout, deleteSetFromWorkout } from '../actions';
 import { isRedirect } from '@/lib/errors';
 
@@ -38,6 +39,7 @@ export function DeleteSetInlineButton({
   setId: string;
   workoutId: string;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [hidden, setHidden] = useState(false);
 
@@ -47,6 +49,10 @@ export function DeleteSetInlineButton({
     startTransition(async () => {
       try {
         await deleteSetFromWorkout(setId, workoutId);
+        // The server action revalidates the path but the in-place client tree
+        // doesn't re-fetch automatically — force a refresh so the deleted set
+        // disappears from the rendered list.
+        router.refresh();
       } catch (e) {
         setHidden(false);
         alert('Erreur : ' + (e as Error).message);
