@@ -30,22 +30,27 @@ export async function logSet(params: {
   reps: number;
   weightKg: number;
   rpe: number | null;
-}) {
+}): Promise<{ id: string; logged_at: string }> {
   const user = await requireUser();
   const supabase = await createClient();
 
-  const { error } = await supabase.from('sets').insert({
-    user_id: user.id,
-    workout_id: params.workoutId,
-    exercise_id: params.exerciseId,
-    set_number: params.setNumber,
-    reps: params.reps,
-    weight_kg: params.weightKg,
-    rpe: params.rpe,
-  });
-  if (error) throw new Error(error.message);
+  const { data, error } = await supabase
+    .from('sets')
+    .insert({
+      user_id: user.id,
+      workout_id: params.workoutId,
+      exercise_id: params.exerciseId,
+      set_number: params.setNumber,
+      reps: params.reps,
+      weight_kg: params.weightKg,
+      rpe: params.rpe,
+    })
+    .select('id, logged_at')
+    .single();
+  if (error || !data) throw new Error(error?.message ?? 'Insert failed');
 
   revalidatePath(`/session/${params.workoutId}`);
+  return { id: data.id, logged_at: data.logged_at };
 }
 
 export async function deleteSet(setId: string, workoutId: string) {

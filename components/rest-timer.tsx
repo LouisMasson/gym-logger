@@ -111,7 +111,6 @@ export default function RestTimer({
   }
 
   const isDone = remaining === 0;
-  const pct = Math.max(0, Math.min(100, ((duration - remaining) / duration) * 100));
   const mm = String(Math.floor(remaining / 60)).padStart(2, '0');
   const ss = String(remaining % 60).padStart(2, '0');
 
@@ -154,15 +153,6 @@ export default function RestTimer({
             −15s
           </button>
         </div>
-      </div>
-      <div
-        className="mt-2 h-1 rounded-full overflow-hidden"
-        style={{ background: 'var(--surface-2)' }}
-      >
-        <div
-          className="h-full rounded-full transition-[width] duration-300"
-          style={{ width: `${pct}%`, background: 'var(--accent)' }}
-        />
       </div>
     </div>
   );

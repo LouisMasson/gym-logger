@@ -134,7 +134,7 @@ export default function SessionEditor({
     restTimerRef.current?.start();
     startTransition(async () => {
       try {
-        await logSet({
+        const real = await logSet({
           workoutId: workout.id,
           exerciseId: selectedExoId,
           setNumber: nextSetNumber,
@@ -142,6 +142,12 @@ export default function SessionEditor({
           weightKg: weight,
           rpe,
         });
+        // Replace optimistic temp id with real DB id so the inline ✕ delete works.
+        setSets((prev) =>
+          prev.map((s) =>
+            s.id === optimistic.id ? { ...s, id: real.id, logged_at: real.logged_at } : s
+          )
+        );
       } catch (e) {
         setSets((prev) => prev.filter((s) => s.id !== optimistic.id));
         restTimerRef.current?.stop();
