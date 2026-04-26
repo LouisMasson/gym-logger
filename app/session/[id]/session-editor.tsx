@@ -39,28 +39,74 @@ function Chrono({ from }: { from: string }) {
   );
 }
 
+type LastSetMap = Record<string, { reps: number; weight: number; rpe: number | null }>;
+
 export default function SessionEditor({
   workout,
   exercises,
   initialSets,
+  lastSetsByExercise = {},
 }: {
   workout: Workout;
   exercises: Exercise[];
   initialSets: Set[];
+  lastSetsByExercise?: LastSetMap;
 }) {
   const [sets, setSets] = useState<Set[]>(initialSets);
-  const [selectedExoId, setSelectedExoId] = useState<string>(
-    initialSets[initialSets.length - 1]?.exercise_id ?? exercises[0]?.id ?? ''
-  );
-  const [reps, setReps] = useState(8);
-  const [weight, setWeight] = useState(60);
-  const [rpe, setRpe] = useState(7);
+  const initialExoId =
+    initialSets[initialSets.length - 1]?.exercise_id ?? exercises[0]?.id ?? '';
+  const [selectedExoId, setSelectedExoId] = useState<string>(initialExoId);
+
+  // Pre-fill stepper from last logged set on this exo (across ALL workouts).
+  // If user already logged a set on this exo IN this workout, that takes priority.
+  function suggestedFor(exoId: string) {
+    const inSession = sets.filter((s) => s.exercise_id === exoId);
+    const last = inSession[inSession.length - 1];
+    if (last) {
+      return { reps: last.reps, weight: Number(last.weight_kg ?? 0), rpe: last.rpe ?? 7 };
+    }
+    const fromHistory = lastSetsByExercise[exoId];
+    if (fromHistory) {
+      return { reps: fromHistory.reps, weight: fromHistory.weight, rpe: fromHistory.rpe ?? 7 };
+    }
+    return { reps: 8, weight: 60, rpe: 7 };
+  }
+
+  const initialSuggestion = suggestedFor(initialExoId);
+  const [reps, setReps] = useState(initialSuggestion.reps);
+  const [weight, setWeight] = useState(initialSuggestion.weight);
+  const [rpe, setRpe] = useState(initialSuggestion.rpe);
   const [pending, startTransition] = useTransition();
   const [ending, setEnding] = useState(false);
+
+  // When the user picks a different exercise, snap the stepper to its suggested values.
+  function changeExercise(newExoId: string) {
+    setSelectedExoId(newExoId);
+    const s = suggestedFor(newExoId);
+    setReps(s.reps);
+    setWeight(s.weight);
+    setRpe(s.rpe);
+  }
 
   const selectedExo = exercises.find((e) => e.id === selectedExoId);
   const setsForExo = sets.filter((s) => s.exercise_id === selectedExoId);
   const nextSetNumber = setsForExo.length + 1;
+  const lastSetSummary = (() => {
+    const inSession = setsForExo[setsForExo.length - 1];
+    if (inSession) {
+      return {
+        source: 'séance',
+        reps: inSession.reps,
+        weight: Number(inSession.weight_kg ?? 0),
+        rpe: inSession.rpe,
+      };
+    }
+    const h = lastSetsByExercise[selectedExoId];
+    if (h) {
+      return { source: 'historique', reps: h.reps, weight: h.weight, rpe: h.rpe };
+    }
+    return null;
+  })();
 
   const totalVolume = useMemo(
     () => sets.reduce((acc, s) => acc + s.reps * Number(s.weight_kg ?? 0), 0),
@@ -148,7 +194,7 @@ export default function SessionEditor({
         <label className="label-xs">Exercice</label>
         <select
           value={selectedExoId}
-          onChange={(e) => setSelectedExoId(e.target.value)}
+          onChange={(e) => changeExercise(e.target.value)}
           className="mt-2 w-full bg-surface border border-border rounded-xl px-4 py-3 text-[15px] outline-none focus:border-accent-dim appearance-none"
           style={{ backgroundImage: 'url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'8\' viewBox=\'0 0 12 8\'><path fill=\'%238B9199\' d=\'M6 8L0 0h12z\'/></svg>")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center' }}
         >
@@ -164,6 +210,29 @@ export default function SessionEditor({
         </h2>
       )}
       <p className="text-muted text-[13px] mt-1 tnum">Série {nextSetNumber}</p>
+
+      {lastSetSummary && (
+        <button
+          type="button"
+          onClick={() => {
+            setReps(lastSetSummary.reps);
+            setWeight(lastSetSummary.weight);
+            if (lastSetSummary.rpe != null) setRpe(lastSetSummary.rpe);
+          }}
+          className="mt-3 w-full text-left rounded-xl border border-border px-3 py-2 hover:border-accent-dim transition-colors"
+          style={{ background: 'rgba(212, 255, 61, 0.05)' }}
+          aria-label="Reprendre la dernière série"
+        >
+          <span className="label-xs">Dernière série · {lastSetSummary.source}</span>
+          <div className="flex items-center justify-between mt-0.5">
+            <span className="font-mono tnum text-[15px]">
+              {lastSetSummary.weight} kg <span className="text-muted">×</span> {lastSetSummary.reps}
+              {lastSetSummary.rpe != null && <span className="text-muted"> · RPE {lastSetSummary.rpe}</span>}
+            </span>
+            <span className="text-[12px]" style={{ color: 'var(--accent)' }}>↑ reprendre</span>
+          </div>
+        </button>
+      )}
 
       <StepperRow label="kg" value={weight} onDec={() => setWeight((v) => Math.max(0, +(v - 2.5).toFixed(2)))} onInc={() => setWeight((v) => +(v + 2.5).toFixed(2))} />
       <StepperRow label="rep" value={reps} onDec={() => setReps((v) => Math.max(0, v - 1))} onInc={() => setReps((v) => v + 1)} />

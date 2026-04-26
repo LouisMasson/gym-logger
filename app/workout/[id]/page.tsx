@@ -3,6 +3,7 @@ import { requireUser } from '@/lib/auth';
 import { redirect, notFound } from 'next/navigation';
 import Link from 'next/link';
 import DeleteWorkoutButton from './delete-workout-button';
+import DuplicateWorkoutButton from './duplicate-workout-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,6 +98,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
         </section>
       ))}
 
+      <DuplicateWorkoutButton workoutId={w.id} label={w.name ?? 'cette séance'} />
       <DeleteWorkoutButton workoutId={w.id} label={w.name ?? 'cette séance'} />
     </main>
   );
