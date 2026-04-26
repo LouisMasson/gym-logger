@@ -1,36 +1,7 @@
-import { unstable_cache, revalidateTag } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
-
 /**
- * Per-user tag for the exercises list. Invalidate via revalidateTag(exerciseListTag(userId))
- * from server actions that mutate the list (create, rename, archive, etc).
+ * Per-user tag for the exercises list. Kept exported because the CRUD actions
+ * call revalidateTag(exerciseListTag(userId)). Even though the cache wrapper
+ * was removed (Next.js forbids cookies inside unstable_cache), we keep the
+ * tag so re-introducing a non-cookie cached client later is a one-liner.
  */
 export const exerciseListTag = (userId: string) => `exercises:${userId}`;
-
-/**
- * Cached exercises list. Revalidates every 5 min OR when explicitly invalidated by tag.
- * The cache key includes userId so each user has their own cached list.
- *
- * Use case: /session/[id] reads exercises on every set logged. Without caching, that's
- * a Supabase round-trip (~50-100ms) on every page navigation. With caching, only the
- * first hit pays it; mutations from /exercises invalidate immediately via revalidateTag.
- */
-export async function getCachedExercises(userId: string) {
-  const cached = unstable_cache(
-    async () => {
-      const supabase = await createClient();
-      const { data } = await supabase
-        .from('exercises')
-        .select('id, name, muscle_group, is_favorite')
-        .eq('is_archived', false)
-        .order('name', { ascending: true });
-      return data ?? [];
-    },
-    ['exercises', userId],
-    {
-      revalidate: 300,
-      tags: [exerciseListTag(userId)],
-    }
-  );
-  return cached();
-}
