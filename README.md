@@ -1,5 +1,7 @@
 # Gym Logger
 
+![App screenshot](public/app_screenshot.png)
+
 **Logge ta perf. Rien d'autre.**
 
 Application web progressive (PWA) pour tracker ses sessions de musculation — conçue pour un usage solo, rapide à l'usage, avec un design qui ne ressemble pas aux apps de sport habituelles.
