@@ -14,7 +14,7 @@ services:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.gym-logger.rule=Host(`gym.patronusguardian.org`)"
+      - "traefik.http.routers.gym-logger.rule=Host(`${APP_DOMAIN}`)"
       - "traefik.http.routers.gym-logger.entrypoints=websecure"
       - "traefik.http.routers.gym-logger.tls.certresolver=letsencrypt"
       - "traefik.http.services.gym-logger.loadbalancer.server.port=3000"
