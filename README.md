@@ -1,125 +1,172 @@
-# Gym Logger PWA
+# Gym Logger
 
-Logge ta perf. Rien d'autre.
+**Logge ta perf. Rien d'autre.**
 
-Progressive Web App pour logger les performances en salle, avec pipeline data jusqu'à Grafana. Next.js 15 + Supabase + Dokploy + dbt.
+Application web progressive (PWA) pour tracker ses sessions de musculation — conçue pour un usage solo, rapide à l'usage, avec un design qui ne ressemble pas aux apps de sport habituelles.
 
-🌐 **Prod** : https://gym.patronusguardian.org
-🎨 **Preview mockups** : https://gym-preview.patronusguardian.org
-📊 **Dashboard Grafana** : Blueprint Health → row 💪 Strength Training
-📐 **Design system** : Athletic Minimalism — Instrument Serif + Geist + accent lime `#D4FF3D`
+---
+
+## Aperçu
+
+L'idée de départ : une app minimaliste que j'utilise moi-même à la salle, optimisée pour être rapide à ouvrir sur mobile et logger une série en 3 taps. Pas d'abonnement, pas de réseau social, pas de gamification — juste les données utiles.
+
+**Fonctionnalités :**
+- Démarrer une séance et logger des séries (exercice + charge + répétitions + RPE)
+- Bibliothèque d'exercices groupée par muscle, personnalisable (rename, favoris, archivage)
+- Dashboard progression : volume sur 90 jours, records personnels par exercice
+- Duplicate de séance, édition post-séance, rest timer automatique
+- Pipeline data vers Grafana (dbt) pour suivi long terme
+
+---
+
+## Design system — Athletic Minimalism
+
+Fond noir · accent lime `#D4FF3D` · typographie éditoriale
+
+| Rôle | Police |
+|---|---|
+| Titres display | Instrument Serif Italic |
+| Interface | Geist Sans |
+| Timer / chiffres | Geist Mono |
+
+Le parti-pris : une seule couleur d'accent très saturée sur fond sombre, typographie serif italique pour les titres, chiffres en monospace pour les données de perf. L'UI s'efface pour laisser les chiffres au premier plan.
+
+---
 
 ## Stack
 
-- **Framework** : Next.js 15 App Router + React 19 + TypeScript
-- **Auth + DB** : Supabase (project `homelab-data-platform`, schema `gym`)
-- **OAuth** : Google (Apple à suivre)
-- **Style** : Tailwind + CSS variables design tokens
-- **Fonts** : Instrument Serif (display), Geist (UI), Geist Mono (timer)
-- **Deploy** : Dokploy + Traefik + Let's Encrypt SSL
-- **Runtime** : Bun 1.3 (Alpine)
-
-## Schéma DB (Supabase `gym`)
-
-| Table | Rôle |
+| Couche | Techno |
 |---|---|
-| `profiles` | Extension auth.users (display_name) |
-| `exercises` | Catalogue par user (29 seed auto au signup) |
-| `workouts` | Séances (groupe des séries) |
-| `sets` | 1 ligne = 1 série (reps × weight_kg × rpe) |
+| Framework | Next.js 15 App Router + React 19 + TypeScript |
+| Auth & base de données | Supabase (PostgreSQL + RLS) |
+| OAuth | Google |
+| Style | Tailwind CSS + CSS variables (design tokens) |
+| Runtime | Bun 1.3 |
+| Deploy | Docker + Traefik + Let's Encrypt |
+| Data pipeline | dbt + Grafana |
 
-RLS activé : chaque user ne voit que ses propres données via `auth.uid() = user_id`.
+---
+
+## Schéma de base de données
+
+```
+gym.profiles     — extension de auth.users (display_name)
+gym.exercises    — catalogue d'exercices par user (29 pré-chargés à l'inscription)
+gym.workouts     — séances (date, durée, statut)
+gym.sets         — 1 ligne = 1 série (exercise_id, reps, weight_kg, rpe)
+```
+
+RLS activé sur toutes les tables : chaque utilisateur ne peut accéder qu'à ses propres données via `auth.uid() = user_id`.
+
+---
+
+## Architecture
+
+```
+app/
+├── page.tsx                    # Home — volume semaine, dernières séances
+├── login/page.tsx              # Auth Google
+├── exercises/page.tsx          # Bibliothèque d'exercices
+├── progress/page.tsx           # Volume 90j + records personnels
+└── session/
+    ├── new/page.tsx            # Démarrer une séance
+    └── [id]/
+        ├── page.tsx            # Loader server
+        └── session-editor.tsx  # Client — stepper + optimistic UI
+
+lib/supabase/
+├── server.ts                   # Client SSR (cookies)
+├── client.ts                   # Client browser
+└── middleware.ts               # Refresh session + redirect
+
+middleware.ts                   # Edge — auth guard + injection headers user
+```
+
+**Optimisations perf :**
+- Auth dédupliquée via header injection (évite un round-trip Supabase par requête)
+- Cache exercices par user avec `revalidateTag`
+- Edge runtime sur le middleware
+- Docker healthcheck qui sert de warmup JIT
+- Résultat : −29% TTFB sur Home, −36% mémoire RSS (130 MB → 83 MB)
+
+---
 
 ## Pipeline data → Grafana
 
 ```
-gym schema (Supabase OLTP)
-    │
-    ├─► clean.gym_sessions   (1 row par workout terminé, volume_kg, duration, RPE)
-    ├─► agg.gym_weekly       (1 row par lundi, sessions_count, volume_kg_total)
-    └─► agg.gym_prs          (1 row par exo, charge max + reps + date)
+gym.workouts / gym.sets  (OLTP Supabase)
+        │
+        ├─► clean.gym_sessions   — 1 row par séance (volume, durée, RPE moyen)
+        ├─► clean.gym_weekly     — 1 row par semaine (volume total, nb séances)
+        └─► clean.gym_prs        — 1 row par exercice (record charge + date)
                 │
-                └─► Grafana Blueprint Health (d/blueprint-health-main)
-                        └─► row 💪 Strength Training
-                                ├─ Stats: volume sem., séances, séries, RPE moyen
-                                ├─ Bar chart accent lime: volume hebdomadaire
-                                ├─ Timeseries: sessions + durée totale
-                                └─ Table: top 10 records personnels
+                └─► Grafana — row 💪 Strength Training
+                        ├─ Stats: volume semaine, séances, RPE
+                        ├─ Bar chart: volume hebdomadaire
+                        └─ Table: top 10 records personnels
 ```
 
-Refresh quotidien via le cron dbt existant (`agg.gym_*` materialized as tables).
-Models dans le repo [`data-platform/dbt/models/clean/gym_sessions.sql`, `models/agg/gym_weekly.sql`, `models/agg/gym_prs.sql`].
+Refresh quotidien via cron dbt. Les modèles sont dans `data-platform/dbt/models/`.
 
-## Dev local
+---
+
+## Lancer en local
+
+**Prérequis :** Bun, un projet Supabase avec le schéma `gym` configuré.
 
 ```bash
 bun install
-cp .env.local.example .env.local  # renseigner les clés
+cp .env.local.example .env.local   # renseigner URL et anon key Supabase
 bun run dev
 ```
 
-## Deploy
+### Exposer le schéma `gym` via PostgREST
 
-```bash
-docker compose up -d --build
-```
-
-Compose + Traefik labels gèrent Host matching, SSL, port forwarding automatiquement. Le domaine `gym.patronusguardian.org` pointe vers le VPS via wildcard DNS Cloudflare.
-
-## Roadmap
-
-- [x] **Phase 1** — Design system + HTML mockups déployés (gym-preview.patronusguardian.org)
-- [x] **Phase 2** — Auth Google end-to-end + shell Home + fix `x-forwarded-host` derrière Traefik
-- [x] **Phase 3** — Session logging end-to-end (stepper kg/reps/RPE, optimistic UI), /exercises liste groupée par muscle_group, /progress (volume 90j + PRs top 5), bottom nav sticky 4 onglets
-- [x] **Phase 4** — CRUD exercices (rename inline, favoris, archive, muscle_group pills), `/workout/[id]` view détail séance terminée, suppression séance partout (Home, Progress, détail, in-progress), loading.tsx sur toutes les routes
-- [x] **Perf round 1+2** — auth dedup via header injection, drop lucide-react, cache exos per-user (revalidateTag), edge runtime middleware, Docker HEALTHCHECK warmup. -29% TTFB Home, -36% mémoire (130MB → 83MB). [Issue #1 closed](https://github.com/LouisMasson/gym-logger/issues/1).
-- [x] **Phase Data** — Pipeline gym → dbt → Grafana Blueprint Health. Row 💪 Strength Training avec volume hebdo, séances, top PRs. [Issue #6 closed](https://github.com/LouisMasson/gym-logger/issues/6).
-- [x] **Phase 5 — Friction zéro** : quick-add série + dupliquer séance + édition séance passée + rest timer auto. [Milestone closed](https://github.com/LouisMasson/gym-logger/milestone/1).
-- [x] **Phase 7 (partiel) — Icône PWA & splash iOS** : icône lime serif italique "G" avec barre accent, favicon multi-size, 5 splash screens iOS (iPhone 6→14 Pro Max). [Issue #8 closed](https://github.com/LouisMasson/gym-logger/issues/8).
-- [ ] **Phase 6 — Motivation visuelle** (différée) : courbes volume + heatmap + détection PR. À reprendre quand 4-6 semaines de data accumulées.
-- [ ] **OAuth Apple** (différé) : nécessite Apple Developer Account.
-
-## Structure
-
-```
-app/
-├── layout.tsx              # Fonts + metadata PWA + BottomNav
-├── globals.css             # Design tokens (CSS vars)
-├── page.tsx                # Home (volume semaine, dernières séances, CTA)
-├── login/page.tsx          # OAuth Google
-├── auth/callback/route.ts  # Handler post-OAuth (origin from x-forwarded-host)
-├── exercises/page.tsx      # Liste des exos groupée par muscle_group
-├── progress/page.tsx       # Volume 90j + PRs (charge max par exo) + séances
-└── session/
-    ├── actions.ts          # Server actions: startWorkout, logSet, deleteSet, endWorkout
-    ├── new/page.tsx        # Form démarrage séance → redirect /session/[id]
-    └── [id]/
-        ├── page.tsx        # Loader server: workout + exercises + sets
-        └── session-editor.tsx  # Client: stepper kg/reps/RPE + optimistic UI
-
-lib/supabase/
-├── server.ts               # createServerClient (cookies, schema gym)
-├── client.ts               # createBrowserClient
-└── middleware.ts           # Session refresh + redirect guard
-
-middleware.ts               # Next.js middleware entrypoint
-components/
-├── bottom-nav.tsx          # 4 tabs: Home / Session / Progression / Exos
-└── sign-out-button.tsx
-```
-
-## Important : exposer le schéma `gym` via PostgREST
-
-Par défaut Supabase n'expose que `public`. Une fois par projet :
+Par défaut Supabase n'expose que `public`. À faire une fois dans le SQL Editor :
 
 ```sql
 alter role authenticator set pgrst.db_schemas to 'public, graphql_public, gym';
 notify pgrst, 'reload config';
 ```
 
-## Sécurité
+---
 
-- Toutes les tables en RLS, policies scopées `auth.uid() = user_id`
-- Anon key publique par design (JWT + RLS = safe)
-- Aucune clé service_role exposée côté client
-- OAuth Google Client Secret stocké uniquement dans Supabase Dashboard
+## Déploiement Docker
+
+```bash
+docker compose up -d --build
+```
+
+Le `docker-compose.yml` utilise Traefik pour le routing et Let's Encrypt pour le SSL. Définir `APP_DOMAIN` dans les variables d'environnement du serveur.
+
+---
+
+## Variables d'environnement
+
+```
+NEXT_PUBLIC_SUPABASE_URL      URL du projet Supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY Clé anon (publique par design, protégée par RLS)
+APP_DOMAIN                    Domaine de déploiement (ex: gym.example.com)
+```
+
+---
+
+## Roadmap
+
+- [x] Design system + mockups HTML statiques
+- [x] Auth Google end-to-end
+- [x] Logger une séance — stepper kg / reps / RPE, optimistic UI
+- [x] CRUD exercices — rename inline, favoris, archivage, filtre par muscle
+- [x] Vue détail séance, suppression, duplication
+- [x] Optimisations perf (auth dedup, cache, edge middleware, Docker warmup)
+- [x] Pipeline data dbt → Grafana
+- [x] Icône PWA + splash screens iOS
+- [x] Quick-add série, rest timer auto, édition séance passée
+- [ ] Visualisations motivation : courbes volume, heatmap, détection PR automatique
+- [ ] OAuth Apple
+
+---
+
+## Licence
+
+MIT — voir [LICENSE](./LICENSE)
