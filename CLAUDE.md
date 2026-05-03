@@ -80,7 +80,7 @@ The Dockerfile builds a 3-stage image (deps → builder → runner) using `oven/
 |---|---|---|
 | `APP_DOMAIN` | `gym.patronusguardian.org` | Traefik Host rule — **missing = no routing** |
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://xxx.supabase.co` | Baked at build time |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJ...` | Baked at build time |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `YOUR_SUPABASE_ANON_KEY` | Baked at build time |
 
 **Prod**: `https://gym.patronusguardian.org`
 
