@@ -17,7 +17,7 @@ L'idée de départ : une app minimaliste que j'utilise moi-même à la salle, op
 **Fonctionnalités :**
 - Démarrer une séance et logger des séries (exercice + charge + répétitions + RPE)
 - Bibliothèque d'exercices groupée par muscle, personnalisable (rename, favoris, archivage)
-- Dashboard progression : volume sur 90 jours, records personnels par exercice
+- Dashboard progression : heatmap 12 semaines, volume hebdomadaire, records personnels
 - Duplicate de séance, édition post-séance, rest timer automatique
 - Pipeline data vers Grafana (dbt) pour suivi long terme
 
@@ -166,7 +166,9 @@ APP_DOMAIN                    Domaine de déploiement (ex: gym.example.com)
 - [x] Pipeline data dbt → Grafana
 - [x] Icône PWA + splash screens iOS
 - [x] Quick-add série, rest timer auto, édition séance passée
-- [ ] Visualisations motivation : courbes volume, heatmap, détection PR automatique
+- [x] Heatmap régularité 12 semaines (GitHub style) + bar chart volume hebdomadaire
+- [ ] Courbe évolution par exercice (charge max dans le temps)
+- [ ] Détection PR automatique en fin de séance
 - [ ] OAuth Apple
 
 ---
