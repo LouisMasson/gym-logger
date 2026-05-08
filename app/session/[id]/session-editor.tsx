@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useMemo, useRef, useState, useTransition, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { logSet, deleteSet, endWorkout } from '../actions';
 import { deleteWorkout } from '@/app/workout/actions';
-import { isRedirect } from '@/lib/errors';
 import Link from 'next/link';
 import { Trash2 } from '@/components/icons';
 import RestTimer, { type RestTimerHandle } from '@/components/rest-timer';
@@ -86,6 +86,7 @@ export default function SessionEditor({
   const [reps, setReps] = useState(initialSuggestion.reps);
   const [weight, setWeight] = useState(initialSuggestion.weight);
   const [rpe, setRpe] = useState(initialSuggestion.rpe);
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [ending, setEnding] = useState(false);
   const restTimerRef = useRef<RestTimerHandle | null>(null);
@@ -191,8 +192,8 @@ export default function SessionEditor({
     setEnding(true);
     try {
       await endWorkout(workout.id);
+      router.push('/');
     } catch (e) {
-      if (isRedirect(e)) throw e;
       setEnding(false);
       alert('Erreur : ' + (e as Error).message);
     }
@@ -203,9 +204,9 @@ export default function SessionEditor({
     if (!confirm(`Supprimer "${label}" ? Toutes les séries seront perdues. Cette action est irréversible.`)) return;
     setEnding(true);
     try {
-      await deleteWorkout(workout.id, '/');
+      await deleteWorkout(workout.id);
+      router.push('/');
     } catch (e) {
-      if (isRedirect(e)) throw e;
       setEnding(false);
       alert('Erreur : ' + (e as Error).message);
     }

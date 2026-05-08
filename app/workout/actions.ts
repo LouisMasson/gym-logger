@@ -3,9 +3,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 
-export async function deleteWorkout(workoutId: string, redirectTo?: string) {
+export async function deleteWorkout(workoutId: string): Promise<void> {
   await requireUser();
   const supabase = await createClient();
 
@@ -15,8 +14,6 @@ export async function deleteWorkout(workoutId: string, redirectTo?: string) {
 
   revalidatePath('/');
   revalidatePath('/progress');
-
-  if (redirectTo) redirect(redirectTo);
 }
 
 /**
@@ -24,7 +21,7 @@ export async function deleteWorkout(workoutId: string, redirectTo?: string) {
  * to the active session editor. Use case: user notices a wrong set after closing
  * a session, or wants to add a forgotten exercise.
  */
-export async function reopenWorkout(workoutId: string) {
+export async function reopenWorkout(workoutId: string): Promise<{ redirectTo: string }> {
   await requireUser();
   const supabase = await createClient();
 
@@ -37,7 +34,7 @@ export async function reopenWorkout(workoutId: string) {
   revalidatePath('/');
   revalidatePath('/progress');
   revalidatePath(`/workout/${workoutId}`);
-  redirect(`/session/${workoutId}`);
+  return { redirectTo: `/session/${workoutId}` };
 }
 
 /**
@@ -84,5 +81,5 @@ export async function duplicateWorkout(sourceWorkoutId: string) {
     throw new Error(insErr?.message ?? 'Impossible de dupliquer la séance');
   }
 
-  redirect(`/session/${created.id}`);
+  return { redirectTo: `/session/${created.id}` };
 }

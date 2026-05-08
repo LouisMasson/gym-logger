@@ -2,10 +2,9 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { requireUser } from '@/lib/auth';
-import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 
-export async function startWorkout(formData: FormData) {
+export async function startWorkout(formData: FormData): Promise<{ id: string }> {
   const name = ((formData.get('name') as string) || '').trim() || null;
   const user = await requireUser();
   const supabase = await createClient();
@@ -20,7 +19,7 @@ export async function startWorkout(formData: FormData) {
     throw new Error(error?.message ?? 'Impossible de démarrer la séance');
   }
 
-  redirect(`/session/${data.id}`);
+  return { id: data.id };
 }
 
 export async function logSet(params: {
@@ -63,7 +62,7 @@ export async function deleteSet(setId: string, workoutId: string) {
   revalidatePath(`/session/${workoutId}`);
 }
 
-export async function endWorkout(workoutId: string) {
+export async function endWorkout(workoutId: string): Promise<void> {
   await requireUser();
   const supabase = await createClient();
 
@@ -73,5 +72,6 @@ export async function endWorkout(workoutId: string) {
     .eq('id', workoutId);
   if (error) throw new Error(error.message);
 
-  redirect('/');
+  revalidatePath('/');
+  revalidatePath('/progress');
 }
