@@ -1,8 +1,8 @@
 'use client';
 
 import { useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { duplicateWorkout } from '../actions';
-import { isRedirect } from '@/lib/errors';
 
 export default function DuplicateWorkoutButton({
   workoutId,
@@ -11,14 +11,15 @@ export default function DuplicateWorkoutButton({
   workoutId: string;
   label: string;
 }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   function handleClick() {
     startTransition(async () => {
       try {
-        await duplicateWorkout(workoutId);
+        const { redirectTo } = await duplicateWorkout(workoutId);
+        router.push(redirectTo);
       } catch (e) {
-        if (isRedirect(e)) throw e;
         alert('Erreur : ' + (e as Error).message);
       }
     });

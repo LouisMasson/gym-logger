@@ -3,18 +3,18 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { reopenWorkout, deleteSetFromWorkout } from '../actions';
-import { isRedirect } from '@/lib/errors';
 
 export function ReopenWorkoutButton({ workoutId }: { workoutId: string }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   function handleClick() {
     if (!confirm('Rouvrir cette séance pour la modifier ? Elle redeviendra "en cours" jusqu\'à ce que tu cliques sur Terminer à nouveau.')) return;
     startTransition(async () => {
       try {
-        await reopenWorkout(workoutId);
+        const { redirectTo } = await reopenWorkout(workoutId);
+        router.push(redirectTo);
       } catch (e) {
-        if (isRedirect(e)) throw e;
         alert('Erreur : ' + (e as Error).message);
       }
     });
